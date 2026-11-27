@@ -1,0 +1,75 @@
+{
+  "name": "toolcage",
+  "version": "1.0.0",
+  "description": "Zero-dependency AI-agent and MCP tool-call policy firewall with argument guards, capability budgets, runaway-loop detection, immutable audit logs, and result sanitization",
+  "type": "module",
+  "license": "MIT",
+  "main": "./cjs/index.cjs",
+  "module": "./src/index.mjs",
+  "types": "./types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./src/index.mjs",
+      "require": "./cjs/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "toolcage": "./bin/toolcage.mjs"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "cjs/",
+    "types/",
+    "examples/",
+    "README.md",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+    "GOOD_FIRST_ISSUES.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "node scripts/build-cjs.mjs",
+    "test": "node scripts/run-tests.mjs",
+    "test:all": "node scripts/build-cjs.mjs && node scripts/run-tests.mjs",
+    "check:types": "node scripts/check-types.mjs",
+    "smoke:cli": "node scripts/cli-smoke.mjs",
+    "check:pack": "node scripts/check-pack.mjs",
+    "verify": "npm test && node scripts/build-cjs.mjs --check && node scripts/check-types.mjs && node scripts/cli-smoke.mjs && node scripts/check-pack.mjs"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "keywords": [
+    "ai-agent",
+    "mcp",
+    "model-context-protocol",
+    "tool-call",
+    "security",
+    "firewall",
+    "prompt-injection",
+    "ssrf",
+    "command-injection",
+    "path-traversal",
+    "zero-dependency",
+    "audit-log",
+    "rate-limit",
+    "secret-redaction"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/draarivpatel-ui/toolcage.git"
+  },
+  "bugs": {
+    "url": "https://github.com/draarivpatel-ui/toolcage/issues"
+  },
+  "homepage": "https://github.com/draarivpatel-ui/toolcage#readme",
+  "publishConfig": {
+    "access": "public"
+  }
+}
