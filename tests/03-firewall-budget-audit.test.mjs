@@ -425,6 +425,14 @@ test('capability budget admits within limits', () => {
   assert.equal(budget.admit('x', {}, 'a', 10).ok, true);
 });
 
+test('capability budget does not truncate large output byte counts to 32 bits', () => {
+  const budget = new CapabilityBudget({ maxCalls: 10, maxBytes: 100, windowMs: 1000, windowMaxCalls: 10, duplicateWindowMs: 1000, maxDuplicates: 10 });
+  assert.equal(budget.admit('x', {}, 'a', 1).ok, true);
+  const completion = budget.complete('x', 4294967296);
+  assert.equal(completion.ok, false);
+  assert.equal(completion.code, 'BYTE_BUDGET');
+});
+
 for (const [field, config] of [
   ['SESSION_CALL_LIMIT', { maxCalls: 1, maxBytes: 100, windowMs: 1000, windowMaxCalls: 10, duplicateWindowMs: 1000, maxDuplicates: 10 }],
   ['RATE_LIMIT', { maxCalls: 10, maxBytes: 100, windowMs: 1000, windowMaxCalls: 1, duplicateWindowMs: 1000, maxDuplicates: 10 }],

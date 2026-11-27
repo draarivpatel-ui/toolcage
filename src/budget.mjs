@@ -64,7 +64,8 @@ export class CapabilityBudget {
   }
 
   complete(toolName, outputBytes) {
-    this.bytes += Math.max(0, outputBytes | 0);
+    const measured = typeof outputBytes === 'number' && Number.isFinite(outputBytes) ? Math.max(0, Math.trunc(outputBytes)) : 0;
+    this.bytes += measured;
     if (this.bytes > this.config.maxBytes) {
       return denial('BYTE_BUDGET', 'cumulative byte budget exhausted by tool output');
     }

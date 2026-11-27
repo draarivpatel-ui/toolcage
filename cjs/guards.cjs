@@ -142,9 +142,9 @@ function percentDecodeRepeated(value) {
 
 function guardPath(value, spec, path) {
   const errors = [];
-  if (CONTROL_RE.test(value) || CONTROL_PERCENT_RE.test(value)) errors.push(err('CONTROL_CHARACTER', 'path contains a control character', path));
-  if (value.includes('\u0000')) errors.push(err('NULL_BYTE', 'path contains a null byte', path));
   const decoded = percentDecodeRepeated(value).replace(/\\/g, '/');
+  if (CONTROL_RE.test(value) || CONTROL_PERCENT_RE.test(value) || CONTROL_RE.test(decoded)) errors.push(err('CONTROL_CHARACTER', 'path contains a control character', path));
+  if (value.includes('\u0000')) errors.push(err('NULL_BYTE', 'path contains a null byte', path));
   if (decoded.includes('\u0000')) errors.push(err('NULL_BYTE', 'encoded path contains a null byte', path));
   if (WINDOWS_DRIVE_RE.test(decoded) || decoded.startsWith('/') || decoded.startsWith('//')) {
     if (spec.allowAbsolute !== true) errors.push(err('ABSOLUTE_PATH', 'absolute paths are not allowed', path));

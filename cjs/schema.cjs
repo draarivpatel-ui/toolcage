@@ -2,7 +2,7 @@
 
 const { failure } = require('./errors.cjs');
 const { guardValueByKind } = require('./guards.cjs');
-const { measuredJsonBytes, maxDepthOf, stableStringify, utf8Bytes } = require('./canonical.cjs');
+const { analyzeJsonGraph, measuredJsonBytes, stableStringify, utf8Bytes } = require('./canonical.cjs');
 
 const PARAM_TYPES = new Set([
   'any', 'string', 'number', 'integer', 'boolean', 'object', 'array', 'path', 'url', 'command', 'null',
@@ -81,13 +81,19 @@ function inspectToolArguments(args) {
     error(errors, 'ARGUMENTS_NOT_OBJECT', 'tool arguments must be a plain object', '$');
     return { ok: false, errors };
   }
+  const graph = analyzeJsonGraph(args);
+  if (!graph.ok) {
+    if (graph.reason === 'depth') error(errors, 'DEPTH_EXCEEDED', 'arguments exceed the maximum safe structural depth', '$');
+    else if (graph.reason === 'shared') error(errors, 'SHARED_REFERENCE', 'shared object references are not valid tool arguments', '$');
+    else error(errors, 'CYCLIC_ARGUMENT', 'cyclic values are not valid tool arguments', '$');
+    return { ok: false, errors };
+  }
   scanJsonLike(args, '$', errors, new WeakSet());
   if (errors.length > 0) return { ok: false, errors };
   let bytes = 0;
-  let depth = 0;
+  const depth = Math.max(0, graph.depth - 1);
   try {
     bytes = measuredJsonBytes(args);
-    depth = Math.max(0, maxDepthOf(args) - 1);
   } catch (caught) {
     error(errors, 'MEASUREMENT_FAILED', caught instanceof Error ? caught.message : 'argument measurement failed', '$');
     return { ok: false, errors };

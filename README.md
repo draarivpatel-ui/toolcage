@@ -1,5 +1,7 @@
 # toolcage
 
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/draarivpatel-ui/toolcage/badge)](https://scorecard.dev/viewer/?uri=github.com/draarivpatel-ui/toolcage)
+
 Zero-dependency AI-agent and MCP tool-call security firewall for Node.js.
 
 `toolcage` sits between a model and your real tools. It validates every tool name and argument object before execution, blocks dangerous command, path and URL inputs, enforces capability budgets, stops duplicate runaway loops, writes a tamper-evident audit trail, and sanitizes untrusted tool output before the output goes back to a model.

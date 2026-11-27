@@ -127,6 +127,8 @@ const hostilePaths = [
   ['newline', 'safe\nsecret', 'CONTROL_CHARACTER'],
   ['encoded newline', 'safe%0asecret', 'CONTROL_CHARACTER'],
   ['encoded null', 'safe%00secret', 'CONTROL_CHARACTER'],
+  ['double encoded newline', 'safe%250asecret', 'CONTROL_CHARACTER'],
+  ['triple encoded null', 'safe%252500secret', 'CONTROL_CHARACTER'],
   ['bidi encoded unicode', 'safe%u202esecret', 'PATH_OBFUSCATION'],
 ];
 

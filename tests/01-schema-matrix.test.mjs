@@ -316,6 +316,16 @@ test('normalized arguments are a detached copy', () => {
   assert.equal(result.normalizedArguments.value.nested, 'x');
 });
 
+test('shared object references are rejected instead of exponentially expanded', () => {
+  const shared = { nested: 'x' };
+  expectFailureCode(inspectToolArguments({ first: shared, second: shared }), 'SHARED_REFERENCE');
+});
+
+test('extreme nesting fails closed without recursive stack exhaustion', () => {
+  const result = validate({ value: makeDepth('x', 500) }, { value: { type: 'any' } }, { maxDepth: 1000 });
+  expectFailureCode(result, 'DEPTH_EXCEEDED');
+});
+
 test('measured byte count and depth are reported', () => {
   const result = validate({ value: 'x' }, { value: { type: 'string' } });
   assert.equal(result.ok, true);

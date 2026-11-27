@@ -11,7 +11,7 @@ const hiddenCodepoints = [
   0x2066, 0x2067, 0x2068, 0x2069,
   0x200b, 0x200c, 0x200d, 0x200e, 0x200f,
   0x2060, 0x2061, 0x2062, 0x2063, 0x2064,
-  0x180e, 0xfeff, 0x00ad,
+  0x180e, 0x061c, 0xfeff, 0x00ad,
   0x0000, 0x0001, 0x0008, 0x000b, 0x000c, 0x000e, 0x001f, 0x007f, 0x0085, 0x009f,
   0xe0001, 0xe0020, 0xe0041, 0xe007f,
 ];
@@ -247,6 +247,13 @@ test('cyclic result is blocked', () => {
   assert.equal(sanitizeToolResult(value).action, 'blocked');
 });
 
+test('shared object references in results are blocked instead of exponentially expanded', () => {
+  const shared = { nested: 'x' };
+  const result = sanitizeToolResult({ first: shared, second: shared });
+  assert.equal(result.action, 'blocked');
+  assert.equal(codes(result).includes('RESULT_NOT_JSON'), true);
+});
+
 test('nonplain class instance result is blocked', () => {
   class Example {}
   assert.equal(sanitizeToolResult(new Example()).action, 'blocked');
@@ -276,6 +283,14 @@ test('deep result is blocked at depth limit', () => {
   let value = 'x';
   for (let index = 0; index < 10; index += 1) value = { child: value };
   assert.equal(sanitizeToolResult(value, { maxDepth: 3 }).action, 'blocked');
+});
+
+test('extreme result nesting fails closed without recursive stack exhaustion', () => {
+  let value = 'x';
+  for (let index = 0; index < 500; index += 1) value = { child: value };
+  const result = sanitizeToolResult(value, { maxDepth: 1000 });
+  assert.equal(result.action, 'blocked');
+  assert.equal(codes(result).includes('RESULT_TOO_DEEP'), true);
 });
 
 test('depth zero scalar is allowed', () => {

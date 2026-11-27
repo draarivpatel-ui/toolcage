@@ -1,6 +1,6 @@
 // Sanitize untrusted tool output before it is returned to a model.
 
-const { measuredJsonBytes } = require('./canonical.cjs');
+const { analyzeJsonGraph, measuredJsonBytes } = require('./canonical.cjs');
 
 const REDACTED_SECRET = '[REDACTED_SECRET]';
 const REDACTED_BLOCK = '[REDACTED_PRIVATE_KEY_BLOCK]';
@@ -40,6 +40,7 @@ function isHiddenCodepoint(cp) {
     || (cp >= 0x200b && cp <= 0x200f)
     || (cp >= 0x2060 && cp <= 0x2064)
     || cp === 0x180e
+    || cp === 0x061c
     || cp === 0xfeff
     || cp === 0x00ad
     || (cp >= 0xe0000 && cp <= 0xe007f)
@@ -185,9 +186,15 @@ function sanitizeToolResult(result, options) {
   let unsupported = false;
   let unsafeKeys = false;
 
+  const graph = analyzeJsonGraph(result);
+  if (!graph.ok) {
+    if (graph.reason === 'depth') findings.push({ code: 'RESULT_TOO_DEEP', path: '$', message: 'result exceeds the maximum safe structural depth' });
+    else findings.push({ code: 'RESULT_NOT_JSON', path: '$', message: graph.reason === 'shared' ? 'shared object references are not valid JSON results' : 'cyclic result value' });
+    return { action: 'blocked', ok: false, value: null, findings, removedHidden, redactedSecrets, bytes: 0 };
+  }
   const structure = inspectResultStructure(result);
   let inputBytes = -1;
-  let inputDepth = structure.depth;
+  const inputDepth = graph.depth;
   if (structure.ok) {
     try {
       inputBytes = measuredJsonBytes(result);

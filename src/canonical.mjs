@@ -2,7 +2,65 @@
 
 import { createHash } from 'node:crypto';
 
+export const MAX_JSON_GRAPH_DEPTH = 128;
+
+function graphError(reason) {
+  if (reason === 'cyclic') return new TypeError('cyclic value cannot be canonicalized');
+  if (reason === 'shared') return new TypeError('shared object references cannot be canonicalized safely');
+  return new TypeError(`json value exceeds maximum safe structural depth ${MAX_JSON_GRAPH_DEPTH}`);
+}
+
+export function analyzeJsonGraph(value, maximumDepth = MAX_JSON_GRAPH_DEPTH) {
+  const seen = new WeakSet();
+  const active = new WeakSet();
+  let depth = 0;
+  const stack = [{ node: value, depth: 0, enter: true }];
+  while (stack.length > 0) {
+    const frame = stack.pop();
+    const node = frame.node;
+    if (node === null || typeof node !== 'object') {
+      if (frame.depth > maximumDepth) return { ok: false, reason: 'depth', depth: frame.depth };
+      depth = Math.max(depth, frame.depth);
+      continue;
+    }
+    if (!frame.enter) {
+      active.delete(node);
+      continue;
+    }
+    if (active.has(node)) return { ok: false, reason: 'cyclic', depth: frame.depth };
+    if (seen.has(node)) return { ok: false, reason: 'shared', depth: frame.depth };
+    if (frame.depth > maximumDepth) return { ok: false, reason: 'depth', depth: frame.depth };
+    seen.add(node);
+    active.add(node);
+    depth = Math.max(depth, frame.depth);
+    stack.push({ node, depth: frame.depth, enter: false });
+    for (const key of Object.keys(node)) {
+      const descriptor = Object.getOwnPropertyDescriptor(node, key);
+      if (descriptor && Object.prototype.hasOwnProperty.call(descriptor, 'value')) {
+        stack.push({ node: descriptor.value, depth: frame.depth + 1, enter: true });
+      }
+    }
+  }
+  return { ok: true, depth };
+}
+
+function assertSafeGraph(value) {
+  const graph = analyzeJsonGraph(value);
+  if (!graph.ok) throw graphError(graph.reason);
+  return graph;
+}
+
+function ownDataValue(value, key) {
+  const descriptor = Object.getOwnPropertyDescriptor(value, key);
+  if (!descriptor) throw new TypeError('sparse arrays cannot be canonicalized');
+  if (typeof descriptor.get === 'function' || typeof descriptor.set === 'function') {
+    throw new TypeError('accessor properties cannot be canonicalized');
+  }
+  return descriptor.value;
+}
+
 export function stableStringify(value) {
+  assertSafeGraph(value);
   const seen = new WeakSet();
   return stringifyValue(value, seen);
 }
@@ -21,11 +79,15 @@ function stringifyValue(value, seen) {
   seen.add(value);
   try {
     if (Array.isArray(value)) {
-      return '[' + value.map((entry) => stringifyValue(entry, seen)).join(',') + ']';
+      const entries = [];
+      for (let index = 0; index < value.length; index += 1) {
+        entries.push(stringifyValue(ownDataValue(value, String(index)), seen));
+      }
+      return '[' + entries.join(',') + ']';
     }
     const parts = [];
     for (const key of Object.keys(value).sort()) {
-      const entry = value[key];
+      const entry = ownDataValue(value, key);
       if (entry === undefined) throw new TypeError('undefined values cannot be canonicalized');
       parts.push(JSON.stringify(key) + ':' + stringifyValue(entry, seen));
     }
@@ -52,24 +114,7 @@ export function measuredJsonBytes(value) {
 }
 
 export function maxDepthOf(value) {
-  const seen = new WeakSet();
-  function visit(node, depth) {
-    if (node === null || typeof node !== 'object') return depth;
-    if (seen.has(node)) throw new TypeError('cyclic value has no finite depth');
-    seen.add(node);
-    try {
-      let best = depth;
-      if (Array.isArray(node)) {
-        for (const entry of node) best = Math.max(best, visit(entry, depth + 1));
-      } else {
-        for (const key of Object.keys(node)) best = Math.max(best, visit(node[key], depth + 1));
-      }
-      return best;
-    } finally {
-      seen.delete(node);
-    }
-  }
-  return visit(value, 0);
+  return assertSafeGraph(value).depth;
 }
 
 export function deepImmutableCopy(value) {
