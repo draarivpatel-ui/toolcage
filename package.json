@@ -37,6 +37,7 @@
   "scripts": {
     "build": "node scripts/build-cjs.mjs",
     "test": "node scripts/run-tests.mjs",
+    "test:fuzz": "node --test test/fuzz.test.js",
     "test:all": "node scripts/build-cjs.mjs && node scripts/run-tests.mjs",
     "check:types": "node scripts/check-types.mjs",
     "smoke:cli": "node scripts/cli-smoke.mjs",
@@ -44,7 +45,9 @@
     "verify": "npm test && node scripts/build-cjs.mjs --check && node scripts/check-types.mjs && node scripts/cli-smoke.mjs && node scripts/check-pack.mjs"
   },
   "dependencies": {},
-  "devDependencies": {},
+  "devDependencies": {
+    "fast-check": "4.10.3"
+  },
   "keywords": [
     "ai-agent",
     "mcp",

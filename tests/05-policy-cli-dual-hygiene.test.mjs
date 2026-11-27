@@ -293,12 +293,14 @@ test('tracked text files use LF line endings', () => {
   assert.deepEqual(failures, []);
 });
 
-test('package metadata stays zero dependency and correctly versioned', () => {
+test('package metadata keeps runtime dependencies empty and correctly versioned', () => {
   const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
   assert.equal(pkg.name, 'toolcage');
   assert.equal(pkg.version, VERSION);
   assert.deepEqual(pkg.dependencies, {});
-  assert.deepEqual(pkg.devDependencies, {});
+  assert.deepEqual(Object.keys(pkg.devDependencies || {}).sort(), ['fast-check']);
+  assert.equal(typeof pkg.devDependencies['fast-check'], 'string');
+  assert.equal(/^[\^~]/u.test(pkg.devDependencies['fast-check']), false);
   assert.equal(pkg.engines.node, '>=18.0.0');
 });
 

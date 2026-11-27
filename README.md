@@ -238,7 +238,7 @@ node scripts/cli-smoke.mjs
 node scripts/check-pack.mjs
 ```
 
-The package has zero runtime dependencies and zero development dependencies. Generated CommonJS files in `cjs/` are tracked so the published tarball is reproducible without a build dependency.
+The package has zero runtime dependencies. Generated CommonJS files in `cjs/` are tracked so the published tarball is reproducible without a build dependency, and fast-check is limited to development-only property fuzzing.
 
 ## License
 
