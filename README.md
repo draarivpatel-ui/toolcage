@@ -73,7 +73,7 @@ Declared parameter types receive additional inspection:
 
 - `command`: shell operators, substitution, process substitution, expansion, control characters, unbalanced quoting, dangerous git flags and git SSH command overrides.
 - `path`: parent traversal, encoded traversal, absolute paths, Windows drive paths, UNC paths, home expansion, null bytes and control characters.
-- `url`: unsafe schemes, userinfo, whitespace and backslash ambiguity, non-default ports, local hostnames, direct private or reserved IP literals, IPv4 spelling obfuscation, IPv4-mapped IPv6, host allowlists and host denylists.
+- `url`: unsafe schemes, userinfo, whitespace and backslash ambiguity, non-default ports, local hostnames, bare single-label hostnames, direct private or reserved IP literals, IPv4 spelling obfuscation, IPv4-mapped IPv6, host allowlists and host denylists.
 
 These guards are validation layers. They are not a replacement for least-privilege tool implementations.
 
@@ -154,6 +154,8 @@ const policy = {
   },
 };
 ```
+
+Bare single-label DNS names such as `intranet`, `router` and `nas` are denied by default because resolver search suffixes can bind them to internal machines. A trusted policy can set `allowSingleLabelHostnames: true` or name the exact host in `hostPolicy.allow`. Wildcards do not lift this block, and built-in local names such as `localhost` stay denied unless the broader private-network policy is explicitly enabled.
 
 Validate a policy statically before deployment:
 

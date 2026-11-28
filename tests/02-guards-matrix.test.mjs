@@ -254,6 +254,37 @@ test('url private networks can be explicit policy choice', () => {
   assert.deepEqual(guardUrl('http://127.0.0.1/', { type: 'url', allowPrivateNetworks: true }, '$'), []);
 });
 
+test('url guard blocks bare single-label internal hostnames by default', () => {
+  for (const host of ['intranet', 'router', 'nas', 'local', 'intranet.']) {
+    const result = guardUrl(`https://${host}/`, { type: 'url' }, '$');
+    assert.equal(codes(result).includes('SSRF_LOCAL_HOSTNAME'), true, `${host}: ${JSON.stringify(result)}`);
+  }
+});
+
+test('url single-label hostnames require explicit opt-in or exact allowlist entry', () => {
+  assert.deepEqual(guardUrl('https://intranet/', { type: 'url', allowSingleLabelHostnames: true }, '$'), []);
+  assert.deepEqual(guardUrl('https://intranet/', { type: 'url', hostPolicy: { allow: ['intranet'] } }, '$'), []);
+
+  const wildcard = guardUrl('https://intranet/', { type: 'url', hostPolicy: { allow: ['*.intranet'] } }, '$');
+  assert.equal(codes(wildcard).includes('SSRF_LOCAL_HOSTNAME'), true, JSON.stringify(wildcard));
+});
+
+test('url single-label exact allowlist is order independent', () => {
+  for (const allow of [['example.com', 'intranet'], ['intranet', 'example.com']]) {
+    assert.deepEqual(guardUrl('https://intranet/', { type: 'url', hostPolicy: { allow } }, '$'), [], allow.join(','));
+  }
+});
+
+test('url built-in local denies beat single-label exceptions', () => {
+  for (const spec of [
+    { type: 'url', allowSingleLabelHostnames: true },
+    { type: 'url', hostPolicy: { allow: ['localhost'] } },
+  ]) {
+    const result = guardUrl('https://localhost/', spec, '$');
+    assert.equal(codes(result).includes('SSRF_LOCAL_HOSTNAME'), true, JSON.stringify(result));
+  }
+});
+
 test('url wildcard allowlist matches subdomain', () => {
   assert.deepEqual(guardUrl('https://api.example.com/', { type: 'url', hostPolicy: { allow: ['*.example.com'] } }, '$'), []);
 });

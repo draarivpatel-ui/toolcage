@@ -179,6 +179,13 @@ function hostPatternMatches(host, pattern) {
   return host === normalized || host.endsWith('.' + normalized);
 }
 
+function exactHostPatternMatches(host, pattern) {
+  if (typeof pattern !== 'string' || pattern.length === 0) return false;
+  const normalized = stripTrailingDots(pattern.trim().toLowerCase());
+  if (!normalized || normalized.startsWith('*.') || normalized.startsWith('.')) return false;
+  return host === normalized;
+}
+
 function hostnameLooksLocal(host) {
   if (LOCAL_HOSTNAMES.has(host)) return true;
   return LOCAL_HOST_SUFFIXES.some((suffix) => host.endsWith(suffix));
@@ -226,6 +233,9 @@ function guardUrl(value, spec, path) {
   host = stripTrailingDots(host.toLowerCase());
   if (host.length === 0) push('INVALID_URL', 'URL host is empty');
   if (host.includes('%')) push('INVALID_URL', 'URL host contains percent encoding');
+  const hostPolicy = spec.hostPolicy && typeof spec.hostPolicy === 'object' ? spec.hostPolicy : {};
+  const deny = Array.isArray(hostPolicy.deny) ? hostPolicy.deny : [];
+  const allow = Array.isArray(hostPolicy.allow) ? hostPolicy.allow : [];
   const normalizedIp = normalizeIp(host);
   if (normalizedIp !== null) {
     const classification = classifyIp(normalizedIp);
@@ -234,11 +244,13 @@ function guardUrl(value, spec, path) {
     }
   } else {
     if (!validHostnameShape(host)) push('INVALID_HOSTNAME', 'URL hostname is not a valid DNS name');
-    if (hostnameLooksLocal(host) && spec.allowPrivateNetworks !== true) push('SSRF_LOCAL_HOSTNAME', 'URL hostname is reserved for local networks');
+    if (hostnameLooksLocal(host) && spec.allowPrivateNetworks !== true) {
+      push('SSRF_LOCAL_HOSTNAME', 'URL hostname is reserved for local networks');
+    } else if (!host.includes('.') && spec.allowSingleLabelHostnames !== true
+      && !allow.some((pattern) => exactHostPatternMatches(host, pattern))) {
+      push('SSRF_LOCAL_HOSTNAME', 'bare single-label hostnames are reserved for local networks');
+    }
   }
-  const hostPolicy = spec.hostPolicy && typeof spec.hostPolicy === 'object' ? spec.hostPolicy : {};
-  const deny = Array.isArray(hostPolicy.deny) ? hostPolicy.deny : [];
-  const allow = Array.isArray(hostPolicy.allow) ? hostPolicy.allow : [];
   for (const pattern of deny) {
     if (hostPatternMatches(host, pattern)) {
       push('HOST_DENIED', 'URL host is denied by policy');

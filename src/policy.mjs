@@ -9,8 +9,8 @@ const PARAM_KEYS = new Set([
   'type', 'required', 'nullable', 'enum', 'minLength', 'maxLength', 'maxBytes', 'pattern',
   'min', 'max', 'multipleOf', 'properties', 'additionalProperties', 'items', 'minItems', 'maxItems',
   'uniqueItems', 'maxProperties', 'maxDepth', 'allowAbsolute', 'allowParentTraversal',
-  'allowUnicodeNormalizationBypass', 'allowShellOperators', 'allowPrivateNetworks', 'allowedSchemes',
-  'allowedPorts', 'hostPolicy', 'metadata',
+  'allowUnicodeNormalizationBypass', 'allowShellOperators', 'allowPrivateNetworks', 'allowSingleLabelHostnames',
+  'allowedSchemes', 'allowedPorts', 'hostPolicy', 'metadata',
 ]);
 const BUDGET_KEYS = new Set(['maxCalls', 'maxBytes', 'windowMs', 'windowMaxCalls', 'duplicateWindowMs', 'maxDuplicates']);
 const RATE_KEYS = new Set(['windowMs', 'maxCalls']);
@@ -105,6 +105,7 @@ function validateParamSpec(spec, path, errors, warnings, depth) {
   }
   if (spec.type === 'url') {
     if (spec.allowPrivateNetworks === true) warnings.push(issue('warning', 'POLICY_PRIVATE_NETWORK', 'URL parameter allows private network targets', `${path}.allowPrivateNetworks`));
+    if (spec.allowSingleLabelHostnames === true) warnings.push(issue('warning', 'POLICY_SINGLE_LABEL_HOSTNAMES', 'URL parameter allows bare single-label hostnames', `${path}.allowSingleLabelHostnames`));
     if (spec.allowedSchemes !== undefined && (!Array.isArray(spec.allowedSchemes) || spec.allowedSchemes.some((entry) => typeof entry !== 'string'))) errors.push(issue('error', 'POLICY_SCHEME_INVALID', 'allowedSchemes must be an array of strings', `${path}.allowedSchemes`));
     if (spec.allowedPorts !== undefined && spec.allowedPorts !== 'any' && spec.allowedPorts !== 'default-only' && (!Array.isArray(spec.allowedPorts) || spec.allowedPorts.some((entry) => !Number.isInteger(entry) || entry < 1 || entry > 65535))) errors.push(issue('error', 'POLICY_PORT_INVALID', 'allowedPorts must be default-only, any, or an array of valid ports', `${path}.allowedPorts`));
     validateHostPolicy(spec.hostPolicy, `${path}.hostPolicy`, errors);

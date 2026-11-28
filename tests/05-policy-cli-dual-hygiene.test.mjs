@@ -82,6 +82,7 @@ const warningPolicyCases = [
   ['absolute paths', (p) => { p.tools.read_file.parameters.path.allowAbsolute = true; }, 'POLICY_ABSOLUTE_PATH'],
   ['parent traversal', (p) => { p.tools.read_file.parameters.path.allowParentTraversal = true; }, 'POLICY_PARENT_TRAVERSAL'],
   ['private networks', (p) => { p.tools.read_file.parameters.u = { type: 'url', allowPrivateNetworks: true }; }, 'POLICY_PRIVATE_NETWORK'],
+  ['single-label hostnames', (p) => { p.tools.read_file.parameters.u = { type: 'url', allowSingleLabelHostnames: true }; }, 'POLICY_SINGLE_LABEL_HOSTNAMES'],
   ['shell operators', (p) => { p.tools.read_file.parameters.c = { type: 'command', allowShellOperators: true }; }, 'POLICY_SHELL_OPERATORS'],
   ['open object', (p) => { p.tools.read_file.parameters.o = { type: 'object', additionalProperties: true }; }, 'POLICY_OPEN_OBJECT'],
 ];

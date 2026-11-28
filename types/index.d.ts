@@ -42,6 +42,7 @@ export interface ParameterSpec {
     allowUnicodeNormalizationBypass?: boolean;
     allowShellOperators?: boolean;
     allowPrivateNetworks?: boolean;
+    allowSingleLabelHostnames?: boolean;
     allowedSchemes?: readonly string[];
     allowedPorts?: readonly number[] | 'default-only' | 'any';
     hostPolicy?: HostPolicy;
